@@ -30,4 +30,4 @@ jobs:
       run: |
         PODSPEC=$(ls *.podspec | head -n 1)
         echo "验证 podspec: $PODSPEC"
-        bundle exec pod spec lint $PODSPEC --allow-warnings
+        bundle exec pod lib lint $PODSPEC --allow-warnings --verbose
