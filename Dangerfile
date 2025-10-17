@@ -4,8 +4,62 @@
 def check_changelog
   has_changelog = git.modified_files.include?("CHANGELOG.md")
   
-  if !has_changelog && !git.modified_files.empty?
-    warn("📝 请更新 CHANGELOG.md 文件，记录本次变更的内容")
+  # 排除的文件列表（不需要更新 CHANGELOG 的文件）
+  excluded_files = ["README.md", "Dangerfile", ".gitignore"]
+  
+  # 检查是否有实质性的代码变更
+  code_files = git.modified_files.reject { |file|
+    excluded_files.include?(file) ||
+    file.start_with?(".github/") ||
+    (file.end_with?(".md") && file != "CHANGELOG.md")
+  }
+  
+  has_code_changes = !code_files.empty?
+  
+  # 如果有代码变更，必须更新 CHANGELOG
+  if has_code_changes && !has_changelog
+    fail("❌ 检测到代码变更，但未更新 CHANGELOG.md！")
+    fail("📝 请在 CHANGELOG.md 中添加本次变更的说明")
+    fail("")
+    fail("💡 CHANGELOG 格式示例：")
+    fail("   ## [1.0.1] - 2025-10-17")
+    fail("   ### Added")
+    fail("   - 新增功能描述")
+    fail("   ### Fixed")
+    fail("   - 修复问题描述")
+    fail("   ### Changed")
+    fail("   - 变更内容描述")
+    return
+  end
+  
+  # 如果更新了 CHANGELOG，验证是否包含版本号记录
+  if has_changelog
+    # 获取 podspec 中的版本号
+    all_podspec_files = Dir.glob("*.podspec")
+    if !all_podspec_files.empty?
+      podspec_content = File.read(all_podspec_files.first)
+      current_version = podspec_content.scan(/(?:s|spec)\.version\s*=\s*["']([^"']+)["']/).flatten.first
+      
+      if current_version
+        changelog_content = File.read("CHANGELOG.md")
+        
+        # 检查 CHANGELOG 中是否包含当前版本号
+        unless changelog_content.include?("[#{current_version}]")
+          fail("❌ CHANGELOG.md 中缺少版本 #{current_version} 的记录！")
+          fail("📝 请在 CHANGELOG.md 中添加版本更新说明")
+          fail("")
+          fail("💡 格式示例：")
+          fail("   ## [#{current_version}] - #{Time.now.strftime('%Y-%m-%d')}")
+          fail("   ### Added/Fixed/Changed")
+          fail("   - 具体变更内容")
+          return
+        else
+          message("✅ CHANGELOG.md 已包含版本 #{current_version} 的记录")
+        end
+      end
+    end
+    
+    message("✅ CHANGELOG.md 已更新")
   end
 end
 
