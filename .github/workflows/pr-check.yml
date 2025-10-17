@@ -23,11 +23,10 @@ jobs:
         with:
           ruby-version: '3.2'
           bundler: '2.5.22'
-          bundler-cache: false
+          bundler-cache: true
 
       - name: Install dependencies
         run: |
-          rm -f Gemfile.lock
           bundle config set --local path 'vendor/bundle'
           bundle install
 
