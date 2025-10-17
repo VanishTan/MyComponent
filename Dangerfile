@@ -81,7 +81,6 @@ def check_version_update
     fail("")
     fail("📝 修改文件: #{all_podspec_files.first}")
   end
-  end
 end
 
 # 版本号比较辅助方法
