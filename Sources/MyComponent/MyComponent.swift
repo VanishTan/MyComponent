@@ -7,7 +7,7 @@ import Foundation
     
     // MARK: - Properties
     
-    /// 组件名称123
+    /// 组件名称
     @objc public let name: String
     
     /// 组件版本
