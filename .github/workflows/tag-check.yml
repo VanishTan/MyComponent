@@ -1,0 +1,62 @@
+name: Tag Version Check
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  validate-tag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate tag format
+        run: |
+          TAG=${GITHUB_REF#refs/tags/}
+          echo "检查 tag: $TAG"
+          
+          if [[ ! $TAG =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?$ ]]; then
+            echo "❌ Tag格式错误: $TAG"
+            echo "请使用格式: v1.2.3 或 v1.2.3-beta.1"
+            exit 1
+          fi
+          echo "✅ Tag格式正确"
+
+      - name: Check podspec version
+        run: |
+          TAG=${GITHUB_REF#refs/tags/}
+          VERSION=${TAG#v}
+          PODSPEC_VERSION=$(grep -o 's.version.*=.*"[^"]*"' *.podspec | grep -o '[0-9.]\+')
+          
+          echo "Tag版本: $VERSION"
+          echo "Podspec版本: $PODSPEC_VERSION"
+          
+          if [ "$PODSPEC_VERSION" != "$VERSION" ]; then
+            echo "❌ Podspec版本($PODSPEC_VERSION)与tag版本($VERSION)不匹配"
+            exit 1
+          fi
+          echo "✅ 版本号匹配"
+
+      - name: Check CHANGELOG
+        run: |
+          TAG=${GITHUB_REF#refs/tags/}
+          VERSION=${TAG#v}
+          if ! grep -q "\[$VERSION\]" CHANGELOG.md; then
+            echo "❌ CHANGELOG.md中缺少版本$VERSION的记录"
+            echo "请在CHANGELOG.md中添加: ## [$VERSION] - $(date +%Y-%m-%d)"
+            exit 1
+          fi
+          echo "✅ CHANGELOG已更新"
+
+      - name: Run Fastlane pre-release check
+        run: |
+          gem install fastlane
+          fastlane pre_release_check version:${{ github.ref_name }}
+
+      - name: Success message
+        run: |
+          echo "🎉 版本 ${{ github.ref_name }} 验证通过，可以安全发布！"

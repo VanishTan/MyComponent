@@ -5,12 +5,19 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)，
 并且此项目遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
-## [未发布]
+## [1.0.2] - 2025-01-16
 
-### 计划中
+### Added
 - 添加更多示例组件
 - 集成单元测试
 - 添加文档
+
+### Changed
+- 完善自动化发版流程
+- 优化项目结构
+
+### Fixed
+- 修复初始版本配置问题
 
 ## [1.0.1] - 2025-01-16
 

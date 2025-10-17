@@ -20,26 +20,79 @@ def check_version_update
       new_version = File.read(podspec).scan(/s\.version\s*=\s*["']([^"']+)["']/).flatten.first
       
       if old_version && new_version && old_version != new_version
+        # 检查版本号格式
+        unless new_version.match?(/^\d+\.\d+\.\d+(-[a-zA-Z0-9.-]+)?$/)
+          fail("📋 版本号格式错误，请使用: MAJOR.MINOR.PATCH[-PRERELEASE] (当前: #{new_version})")
+        end
+        
+        # 检查版本号是否递增
+        unless version_greater_than(new_version, old_version)
+          fail("📈 版本号必须递增！当前: #{old_version}, 新版本: #{new_version}")
+        end
+        
         message("🎯 版本号已从 #{old_version} 更新到 #{new_version}")
+      elsif old_version && new_version && old_version == new_version
+        warn("⚠️ 版本号未发生变化，请确认是否需要更新版本")
       end
     end
   end
 end
 
+# 版本号比较辅助方法
+def version_greater_than(version1, version2)
+  begin
+    Gem::Version.new(version1) > Gem::Version.new(version2)
+  rescue ArgumentError
+    false
+  end
+end
+
 # 检查提交信息格式
 def check_commit_messages
-  bad_commits = git.commits.select { |commit| 
-    commit.message.lines.first.length < 10 || 
-    !commit.message.match?(/^(feat|fix|docs|style|refactor|test|chore)(\(.+\))?: /)
-  }
+  bad_commits = []
+  
+  git.commits.each do |commit|
+    message = commit.message.lines.first
+    
+    # 检查基本格式
+    unless message.match?(/^(feat|fix|docs|style|refactor|test|chore|perf|ci|build)(\(.+\))?: .+/)
+      bad_commits << { commit: commit, reason: "格式不符合conventional commits规范" }
+      next
+    end
+    
+    # 检查描述长度
+    description = message.split(': ', 2)[1]
+    if description.nil? || description.length < 10
+      bad_commits << { commit: commit, reason: "描述太简短(至少10个字符)" }
+      next
+    end
+    
+    # 检查是否以句号结尾(可选)
+    if description.end_with?('.')
+      warn("💡 建议: 提交信息描述不需要以句号结尾")
+    end
+  end
   
   if bad_commits.any?
-    warn("📋 请使用规范的提交信息格式: `type(scope): description`")
-    warn("支持的类型: feat, fix, docs, style, refactor, test, chore")
+    fail("📋 发现 #{bad_commits.length} 个提交信息不符合规范！")
+    warn("请使用格式: `type(scope): description`")
+    warn("支持的类型: feat, fix, docs, style, refactor, test, chore, perf, ci, build")
+    warn("")
     
-    bad_commits.each do |commit|
-      warn("❌ 提交信息不规范: `#{commit.message.lines.first}`")
+    bad_commits.each do |item|
+      commit = item[:commit]
+      reason = item[:reason]
+      warn("❌ #{commit.sha[0..7]}: #{commit.message.lines.first}")
+      warn("   原因: #{reason}")
     end
+    
+    warn("")
+    warn("💡 示例:")
+    warn("   feat(auth): 添加用户登录功能")
+    warn("   fix(ui): 修复按钮点击无效的问题")
+    warn("   docs: 更新API文档")
+  else
+    message("✅ 所有提交信息格式正确")
   end
 end
 
