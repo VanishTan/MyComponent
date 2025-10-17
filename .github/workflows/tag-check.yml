@@ -3,7 +3,7 @@ name: Tag Version Check
 on:
   push:
     tags:
-      - 'v*.*.*'
+      - '*.*.*'
 
 jobs:
   validate-tag:
@@ -19,9 +19,9 @@ jobs:
           TAG=${GITHUB_REF#refs/tags/}
           echo "检查 tag: $TAG"
           
-          if [[ ! $TAG =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?$ ]]; then
+          if [[ ! $TAG =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?$ ]]; then
             echo "❌ Tag格式错误: $TAG"
-            echo "请使用格式: v1.2.3 或 v1.2.3-beta.1"
+            echo "请使用格式: 1.2.3 或 1.2.3-beta.1"
             exit 1
           fi
           echo "✅ Tag格式正确"
@@ -29,8 +29,8 @@ jobs:
       - name: Check podspec version
         run: |
           TAG=${GITHUB_REF#refs/tags/}
-          VERSION=${TAG#v}
-          PODSPEC_VERSION=$(grep -o 's.version.*=.*"[^"]*"' *.podspec | grep -o '[0-9.]\+')
+          VERSION=$TAG
+          PODSPEC_VERSION=$(grep -E '(s|spec)\.version.*=.*"[^"]*"' *.podspec | grep -o '[0-9.]\+')
           
           echo "Tag版本: $VERSION"
           echo "Podspec版本: $PODSPEC_VERSION"
@@ -44,7 +44,7 @@ jobs:
       - name: Check CHANGELOG
         run: |
           TAG=${GITHUB_REF#refs/tags/}
-          VERSION=${TAG#v}
+          VERSION=$TAG
           if ! grep -q "\[$VERSION\]" CHANGELOG.md; then
             echo "❌ CHANGELOG.md中缺少版本$VERSION的记录"
             echo "请在CHANGELOG.md中添加: ## [$VERSION] - $(date +%Y-%m-%d)"

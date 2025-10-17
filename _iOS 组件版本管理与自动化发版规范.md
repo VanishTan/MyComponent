@@ -115,7 +115,7 @@ name: iOS Component Release
 on:
   push:
     tags:
-      - 'v*.*.*'
+      - '*.*.*'
 
 jobs:
   release:
@@ -136,13 +136,13 @@ jobs:
         run: |
           pod repo push MyPrivateSpecs MyComponent.podspec --allow-warnings
 触发方式：
-git tag v1.2.3
-git push origin v1.2.3
+git tag 1.2.3
+git push origin 1.2.3
 回滚与应急策略
 场景
 操作步骤
 组件版本错误
-删除 tag git tag -d v1.2.3 && git push origin :v1.2.3
+删除 tag git tag -d 1.2.3 && git push origin :1.2.3
 线上崩溃
 建立 hotfix/xxx → 修复 → 1.2.4
 依赖冲突
