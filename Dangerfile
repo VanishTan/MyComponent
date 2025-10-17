@@ -57,16 +57,16 @@ def check_commit_messages
     # 跳过 merge commit
     next if message.start_with?("Merge branch", "Merge pull request")
     
-    # 检查基本格式 (scope 可选)
-    unless message.match?(/^(feat|fix|docs|style|refactor|test|chore|perf|ci|build)(\([^)]+\))?: .+/)
+    # 检查基本格式 (scope 可选，冒号后空格可选)
+    unless message.match?(/^(feat|fix|docs|style|refactor|test|chore|perf|ci|build)(\([^)]+\))?:\s*.+/)
       bad_commits << { commit: commit, reason: "格式不符合conventional commits规范" }
       next
     end
     
     # 检查描述长度
-    description = message.split(': ', 2)[1]
-    if description.nil? || description.length < 10
-      bad_commits << { commit: commit, reason: "描述太简短(至少10个字符)" }
+    description = message.split(':', 2)[1]&.strip
+    if description.nil? || description.length < 3
+      bad_commits << { commit: commit, reason: "描述太简短(至少3个字符)" }
       next
     end
     
@@ -78,9 +78,10 @@ def check_commit_messages
   
   if bad_commits.any?
     fail("📋 发现 #{bad_commits.length} 个提交信息不符合规范！")
-    warn("⚠️\t请使用格式: type(scope): description")
+    warn("⚠️\t请使用格式: type: description 或 type:description")
     warn("⚠️\t支持的类型: feat, fix, docs, style, refactor, test, chore, perf, ci, build")
-    warn("⚠️\tscope 为可选项，也可以使用 type: description")
+    warn("⚠️\tscope 为可选项，如 type(scope): description")
+    warn("⚠️\t冒号后的空格可选")
     warn("")
     
     bad_commits.each do |item|
@@ -93,8 +94,8 @@ def check_commit_messages
     warn("")
     warn("💡 示例:")
     warn("   feat(auth): 添加用户登录功能")
-    warn("   fix(ui): 修复按钮点击无效的问题")
-    warn("   docs: 更新API文档")
+    warn("   fix: 修复按钮点击问题")
+    warn("   docs:更新API文档")
   else
     message("✅ 所有提交信息格式正确")
   end
