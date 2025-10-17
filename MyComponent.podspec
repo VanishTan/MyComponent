@@ -1,6 +1,6 @@
 Pod::Spec.new do |spec|
   spec.name         = "MyComponent"
-  spec.version      = "1.0.0"
+  spec.version      = "1.0.1"
   spec.summary      = "一个用于测试iOS组件发版自动化流程的示例组件"
   spec.description  = <<-DESC
                     MyComponent 是一个示例iOS组件，用于测试和演示组件发版自动化流程。
