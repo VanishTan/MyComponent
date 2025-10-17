@@ -7,3 +7,6 @@ source "https://rubygems.org"
 gem "fastlane"
 gem "cocoapods"
 gem "danger"
+
+# Fix for Ruby 3.2+ compatibility
+gem "activesupport", ">= 7.0.0"
