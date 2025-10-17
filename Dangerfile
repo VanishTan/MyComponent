@@ -46,8 +46,9 @@ def check_version_update
       diff = git.diff_for_file(podspec)
       next unless diff
       
-      old_version = diff.patch.scan(/-\s*s\.version\s*=\s*["']([^"']+)["']/).flatten.first
-      new_version = File.read(podspec).scan(/s\.version\s*=\s*["']([^"']+)["']/).flatten.first
+      # 兼容 s.version 和 spec.version 两种写法
+      old_version = diff.patch.scan(/-\s*(?:s|spec)\.version\s*=\s*["']([^"']+)["']/).flatten.first
+      new_version = File.read(podspec).scan(/(?:s|spec)\.version\s*=\s*["']([^"']+)["']/).flatten.first
       
       if old_version && new_version && old_version != new_version
         # 检查版本号格式
@@ -67,13 +68,19 @@ def check_version_update
     end
   # 情况2: 有代码变更，但 podspec 没有被修改
   elsif has_code_changes && !all_podspec_files.empty?
-    current_version = File.read(all_podspec_files.first).scan(/s\.version\s*=\s*["']([^"']+)["']/).flatten.first
-    warn("⚠️ 检测到代码变更，但 podspec 版本号未更新")
-    warn("📌 当前版本: #{current_version}")
-    warn("💡 如果本次 PR 包含功能变更或 bug 修复，请更新版本号：")
-    warn("   - 主版本号 (X.0.0): 不兼容的 API 修改")
-    warn("   - 次版本号 (0.X.0): 向下兼容的功能性新增")
-    warn("   - 修订号 (0.0.X): 向下兼容的问题修正")
+    # 兼容 s.version 和 spec.version 两种写法
+    current_version = File.read(all_podspec_files.first).scan(/(?:s|spec)\.version\s*=\s*["']([^"']+)["']/).flatten.first
+    
+    fail("❌ 检测到代码变更，但 podspec 版本号未更新！")
+    fail("📌 当前版本: #{current_version}")
+    fail("")
+    fail("💡 请更新 podspec 中的版本号，遵循语义化版本规范：")
+    fail("   - 主版本号 (X.0.0): 不兼容的 API 修改")
+    fail("   - 次版本号 (0.X.0): 向下兼容的功能性新增")
+    fail("   - 修订号 (0.0.X): 向下兼容的问题修正")
+    fail("")
+    fail("📝 修改文件: #{all_podspec_files.first}")
+  end
   end
 end
 
