@@ -13,7 +13,7 @@ Pod::Spec.new do |spec|
   spec.source       = { :git => "https://github.com/VanishTan/MyComponent.git", :tag => "#{spec.version}" }
 
   spec.ios.deployment_target = "12.0"
-  spec.swift_version = "5.0"
+  spec.swift_versions = ["5.0"]
 
   spec.source_files  = "Sources/**/*.{swift,h,m}"
   spec.public_header_files = "Sources/**/*.h"
