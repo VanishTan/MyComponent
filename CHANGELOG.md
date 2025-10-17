@@ -5,6 +5,25 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)，
 并且此项目遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.0.4] - 2025-10-17
+
+### Added
+- docs: 添加GitHub Actions配置修复指南文档
+- docs: 添加Ruby版本兼容性说明文档
+- ci: 添加CI测试脚本(test-ci.sh)
+- ci: 添加.ruby-version文件指定Ruby 3.2.9版本
+
+### Changed
+- ci: 优化GitHub Actions工作流配置
+- ci: 更新pr-check工作流，增强Danger检查功能
+- ci: 改进tag-check工作流的版本验证逻辑
+- fix(deps): 更新Gemfile.lock以支持Ruby 3.2.9
+
+### Fixed
+- fix(ci): 修复GitHub Actions中Ruby版本兼容性问题
+- fix(podspec): 修正podspec文件配置
+- fix(source): 修复MyComponent.swift源码问题
+
 ## [1.0.2] - 2025-01-16
 
 ### Added

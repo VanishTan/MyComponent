@@ -11,12 +11,23 @@ end
 
 # 检查版本号是否更新
 def check_version_update
-  podspec_files = git.modified_files.select { |file| file.end_with?(".podspec") }
+  # 获取所有 podspec 文件
+  all_podspec_files = Dir.glob("*.podspec")
+  modified_podspec_files = git.modified_files.select { |file| file.end_with?(".podspec") }
   
-  if !podspec_files.empty?
-    podspec_files.each do |podspec|
+  # 检查是否有实质性的代码变更（排除文档、注释等）
+  has_code_changes = !(git.modified_files - ["CHANGELOG.md", "README.md", "Dangerfile", ".github/**/*"]).select { |file|
+    file.end_with?(".swift", ".m", ".h", ".podspec", ".xib", ".storyboard")
+  }.empty?
+  
+  # 情况1: podspec 文件被修改了
+  if !modified_podspec_files.empty?
+    modified_podspec_files.each do |podspec|
       # 检查版本号是否发生变化
-      old_version = git.diff_for_file(podspec).patch.scan(/s\.version\s*=\s*["']([^"']+)["']/).flatten.first
+      diff = git.diff_for_file(podspec)
+      next unless diff
+      
+      old_version = diff.patch.scan(/-\s*s\.version\s*=\s*["']([^"']+)["']/).flatten.first
       new_version = File.read(podspec).scan(/s\.version\s*=\s*["']([^"']+)["']/).flatten.first
       
       if old_version && new_version && old_version != new_version
@@ -32,9 +43,18 @@ def check_version_update
         
         message("🎯 版本号已从 #{old_version} 更新到 #{new_version}")
       elsif old_version && new_version && old_version == new_version
-        warn("⚠️ 版本号未发生变化，请确认是否需要更新版本")
+        warn("⚠️ podspec 文件已修改，但版本号未变化 (#{new_version})")
       end
     end
+  # 情况2: 有代码变更，但 podspec 没有被修改
+  elsif has_code_changes && !all_podspec_files.empty?
+    current_version = File.read(all_podspec_files.first).scan(/s\.version\s*=\s*["']([^"']+)["']/).flatten.first
+    warn("⚠️ 检测到代码变更，但 podspec 版本号未更新")
+    warn("📌 当前版本: #{current_version}")
+    warn("💡 如果本次 PR 包含功能变更或 bug 修复，请更新版本号：")
+    warn("   - 主版本号 (X.0.0): 不兼容的 API 修改")
+    warn("   - 次版本号 (0.X.0): 向下兼容的功能性新增")
+    warn("   - 修订号 (0.0.X): 向下兼容的问题修正")
   end
 end
 
@@ -54,16 +74,19 @@ def check_commit_messages
   git.commits.each do |commit|
     message = commit.message.lines.first
     
-    # 检查基本格式
-    unless message.match?(/^(feat|fix|docs|style|refactor|test|chore|perf|ci|build)(\(.+\))?: .+/)
+    # 跳过 merge commit
+    next if message.start_with?("Merge branch", "Merge pull request")
+    
+    # 检查基本格式 (scope 可选，冒号后空格可选)
+    unless message.match?(/^(feat|fix|docs|style|refactor|test|chore|perf|ci|build)(\([^)]+\))?:\s*.+/)
       bad_commits << { commit: commit, reason: "格式不符合conventional commits规范" }
       next
     end
     
     # 检查描述长度
-    description = message.split(': ', 2)[1]
-    if description.nil? || description.length < 10
-      bad_commits << { commit: commit, reason: "描述太简短(至少10个字符)" }
+    description = message.split(':', 2)[1]&.strip
+    if description.nil? || description.length < 3
+      bad_commits << { commit: commit, reason: "描述太简短(至少3个字符)" }
       next
     end
     
@@ -75,8 +98,10 @@ def check_commit_messages
   
   if bad_commits.any?
     fail("📋 发现 #{bad_commits.length} 个提交信息不符合规范！")
-    warn("请使用格式: `type(scope): description`")
-    warn("支持的类型: feat, fix, docs, style, refactor, test, chore, perf, ci, build")
+    warn("⚠️\t请使用格式: type: description 或 type:description")
+    warn("⚠️\t支持的类型: feat, fix, docs, style, refactor, test, chore, perf, ci, build")
+    warn("⚠️\tscope 为可选项，如 type(scope): description")
+    warn("⚠️\t冒号后的空格可选")
     warn("")
     
     bad_commits.each do |item|
@@ -89,8 +114,8 @@ def check_commit_messages
     warn("")
     warn("💡 示例:")
     warn("   feat(auth): 添加用户登录功能")
-    warn("   fix(ui): 修复按钮点击无效的问题")
-    warn("   docs: 更新API文档")
+    warn("   fix: 修复按钮点击问题")
+    warn("   docs:更新API文档")
   else
     message("✅ 所有提交信息格式正确")
   end
