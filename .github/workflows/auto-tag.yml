@@ -37,8 +37,8 @@ jobs:
           
           echo "找到 podspec 文件: $PODSPEC_FILE"
           
-          # 提取版本号
-          VERSION=$(grep -o 's.version.*=.*"[^"]*"' "$PODSPEC_FILE" | grep -o '[0-9]\+\.[0-9]\+\.[0-9]\+')
+          # 提取版本号（支持 s.version 和 spec.version 两种格式）
+          VERSION=$(grep -E '(s|spec)\.version.*=.*"[^"]*"' "$PODSPEC_FILE" | grep -o '[0-9]\+\.[0-9]\+\.[0-9]\+')
           
           if [ -z "$VERSION" ]; then
             echo "❌ 无法从 podspec 中提取版本号"
