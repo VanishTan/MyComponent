@@ -227,14 +227,31 @@ def check_swift_code
   end
 end
 
-# 检查 PR 标题和描述
+# 检查 PR/MR 标题和描述
 def check_pr_info
-  if github.pr_body.length < 20
-    warn("📝 PR 描述太简短，请详细说明本次变更的内容和原因")
+  # 兼容 GitHub 和 GitLab
+  pr_body = ""
+  pr_title = ""
+  
+  if defined?(github)
+    # GitHub 环境
+    pr_body = github.pr_body
+    pr_title = github.pr_title
+  elsif defined?(gitlab)
+    # GitLab 环境
+    pr_body = gitlab.mr_body
+    pr_title = gitlab.mr_title
+  else
+    # 无法确定平台，跳过检查
+    return
   end
   
-  if github.pr_title.length < 10
-    warn("📋 PR 标题太简短，请使用更描述性的标题")
+  if pr_body.length < 20
+    warn("📝 PR/MR 描述太简短，请详细说明本次变更的内容和原因")
+  end
+  
+  if pr_title.length < 10
+    warn("📋 PR/MR 标题太简短，请使用更描述性的标题")
   end
 end
 
@@ -248,5 +265,6 @@ check_pr_info
 
 # 成功提示
 if git.modified_files.any?
-  message("✅ 感谢您的贡献！请确保所有检查都通过后再合并 PR。")
+  platform = defined?(github) ? "PR" : (defined?(gitlab) ? "MR" : "变更")
+  message("✅ 感谢您的贡献！请确保所有检查都通过后再合并 #{platform}。")
 end
