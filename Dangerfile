@@ -54,8 +54,11 @@ def check_commit_messages
   git.commits.each do |commit|
     message = commit.message.lines.first
     
-    # 检查基本格式
-    unless message.match?(/^(feat|fix|docs|style|refactor|test|chore|perf|ci|build)(\(.+\))?: .+/)
+    # 跳过 merge commit
+    next if message.start_with?("Merge branch", "Merge pull request")
+    
+    # 检查基本格式 (scope 可选)
+    unless message.match?(/^(feat|fix|docs|style|refactor|test|chore|perf|ci|build)(\([^)]+\))?: .+/)
       bad_commits << { commit: commit, reason: "格式不符合conventional commits规范" }
       next
     end
@@ -75,8 +78,9 @@ def check_commit_messages
   
   if bad_commits.any?
     fail("📋 发现 #{bad_commits.length} 个提交信息不符合规范！")
-    warn("请使用格式: `type(scope): description`")
-    warn("支持的类型: feat, fix, docs, style, refactor, test, chore, perf, ci, build")
+    warn("⚠️\t请使用格式: type(scope): description")
+    warn("⚠️\t支持的类型: feat, fix, docs, style, refactor, test, chore, perf, ci, build")
+    warn("⚠️\tscope 为可选项，也可以使用 type: description")
     warn("")
     
     bad_commits.each do |item|
