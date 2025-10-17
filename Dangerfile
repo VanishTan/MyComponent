@@ -15,10 +15,29 @@ def check_version_update
   all_podspec_files = Dir.glob("*.podspec")
   modified_podspec_files = git.modified_files.select { |file| file.end_with?(".podspec") }
   
+  # 排除的文件列表
+  excluded_files = ["CHANGELOG.md", "README.md", "Dangerfile"]
+  
   # 检查是否有实质性的代码变更（排除文档、注释等）
-  has_code_changes = !(git.modified_files - ["CHANGELOG.md", "README.md", "Dangerfile", ".github/**/*"]).select { |file|
+  code_files = git.modified_files.reject { |file|
+    # 排除特定文件
+    excluded_files.include?(file) ||
+    # 排除 .github 目录下的文件
+    file.start_with?(".github/") ||
+    # 排除文档文件
+    file.end_with?(".md")
+  }.select { |file|
+    # 只保留代码文件
     file.end_with?(".swift", ".m", ".h", ".podspec", ".xib", ".storyboard")
-  }.empty?
+  }
+  
+  has_code_changes = !code_files.empty?
+  
+  # 调试信息
+  if has_code_changes
+    message("📋 检测到代码文件变更:")
+    code_files.each { |file| message("  - #{file}") }
+  end
   
   # 情况1: podspec 文件被修改了
   if !modified_podspec_files.empty?
